@@ -10,6 +10,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from skimage.feature import hog
 from scipy.ndimage.measurements import label
+import imageio
+imageio.plugins.ffmpeg.download()
+from moviepy.editor import VideoFileClip
+from IPython.display import HTML
 
 class globalVars():
     #This class stores all of the global variables
@@ -77,7 +81,7 @@ def save_images(img, name, cmap = ''):
         plt.imshow(img,cmap= cmap)
     else:
         plt.imshow(img)
-    plt.savefig(name + '.jpg')
+    plt.savefig('outputImages/' + name + '.jpg')
 
 def bin_spatial(img, color_space='RGB', size=(32, 32)):
     # Convert image to new color space (if specified)
@@ -196,17 +200,17 @@ def extract_features(imgs, globalVariable):
 def extract_all_features(globalVariable):
     car_images = globalVariable.car_images
     noncar_images = globalVariable.noncar_images
-    
+    '''
     ##################################################
     # DELETE THIS ON REAL TEST
     ##################################################
-    maxSamples = 300
+    maxSamples = 100
     car_images = car_images[: maxSamples]
     noncar_images = noncar_images[: maxSamples]
 
 
     ##################################################
-
+    '''
     
     t=time.time()
     globalVariable.car_features = extract_features(car_images, globalVariable)
@@ -459,8 +463,8 @@ def vehicleDetectionPipeline(image):
 ##################################################################
 
 #Load Training Data
-car_images = glob.glob('vehicles/vehicles/**/*.png')
-noncar_images = glob.glob('non-vehicles/non-vehicles/**/*.png')
+car_images = glob.glob('../Resources/TrainingData/vehicles/**/*.png')
+noncar_images = glob.glob('../Resources/TrainingData/non-vehicles/**/*.png')
 print('car image size ', len(car_images))
 print('non-car image size ', len(noncar_images))
 
@@ -535,21 +539,22 @@ train_model(globalVariable)
 #Test image
 ##############################################################
 
-image = mpimg.imread('test4.jpg')
+image = mpimg.imread('test1.jpg')
 
 globalVariable.displayImages = True
 final_image = vehicleDetectionPipeline(image)
 save_images(final_image, 'final image')
 globalVariable.displayImages = False
 
-'''
+
 #Video
 output_file = 'video_output.mp4'
+#input_file = VideoFileClip('project_video.mp4').subclip(6,10)
 input_file = VideoFileClip('project_video.mp4')
 processedClip = input_file.fl_image(vehicleDetectionPipeline)
-#processedClip.write_videofile(processedClip, audio = False)
-%time processedClip.write_videofile(output_file, audio=False)
-'''
+processedClip.write_videofile(output_file, audio = False)
+#%time processedClip.write_videofile(output_file, audio=False)
+
 
 
     
