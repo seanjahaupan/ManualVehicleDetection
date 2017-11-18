@@ -452,7 +452,7 @@ def vehicleDetectionPipeline(image):
     hot_windows_find_cars = find_cars(image, globalVariable)
 
     #add heat map
-    final_image = create_heatmap(np.copy(image), hot_windows_find_cars, threshold = 1)
+    final_image = create_heatmap(np.copy(image), hot_windows_find_cars, threshold = 2)
 
     return final_image
 
@@ -554,6 +554,8 @@ input_file = VideoFileClip('project_video.mp4')
 processedClip = input_file.fl_image(vehicleDetectionPipeline)
 processedClip.write_videofile(output_file, audio = False)
 #%time processedClip.write_videofile(output_file, audio=False)
+
+
 
 
 
