@@ -30,6 +30,7 @@ class globalVars():
         self.spatial_feat = None
         self.hist_feat = None
         self.hog_feat = None
+        self.threshold = None
         
         
         #Image Arrays
@@ -167,6 +168,8 @@ def extract_features(imgs, globalVariable):
             spatial_features = bin_spatial(feature_image, size=spatial_size)
             #Append features to list
             #features.append(spatial_features)
+        else:
+            spatial_features = []
         
                
             
@@ -176,6 +179,8 @@ def extract_features(imgs, globalVariable):
             #Append features to list
             #features.append(hist_features)
         ######################################
+        else:
+            hist_features = []
 
             
         if hog_feat == True:
@@ -346,8 +351,14 @@ def find_cars(img, globalVariable):
                 subimg = cv2.resize(ctrans_tosearch[ytop:ytop+window, xleft:xleft+window], (64,64))
               
                 # Get color features
-                spatial_features = bin_spatial(subimg, size=spatial_size)
-                hist_features = color_hist(subimg, nbins=hist_bins)
+                if globalVariable.spatial_feat:
+                    spatial_features = bin_spatial(subimg, size=spatial_size)
+                else:
+                    spatial_features = []
+                if globalVariable.hist_feat:
+                    hist_features = color_hist(subimg, nbins=hist_bins)
+                else:
+                    hist_features = []
                 
                 # Scale features and make a prediction
               
@@ -452,7 +463,7 @@ def vehicleDetectionPipeline(image):
     hot_windows_find_cars = find_cars(image, globalVariable)
 
     #add heat map
-    final_image = create_heatmap(np.copy(image), hot_windows_find_cars, threshold = 2)
+    final_image = create_heatmap(np.copy(image), hot_windows_find_cars, threshold = globalVariable.threshold)
 
     return final_image
 
@@ -470,19 +481,20 @@ print('non-car image size ', len(noncar_images))
 
 #Setting up variables
 color_space = 'YCrCb' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
-orient = 8  # HOG orientations
+orient = 6  # HOG orientations
 pix_per_cell = 8 # HOG pixels per cell
 cell_per_block = 2 # HOG cells per block
 hog_channel = 'ALL' # Can be 0, 1, 2, or "ALL"
 spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 32    # Number of histogram bins
 hist_range = (0,256)
-spatial_feat = True # Spatial features on or off
-hist_feat = True # Histogram features on or off
+spatial_feat = False # Spatial features on or off
+hist_feat = False # Histogram features on or off
 hog_feat = True # HOG features on or off
 ystart = 400
 ystop = 656
 scaleRange = (1,3,5) #start, stop, and num points
+threshold = 2
 
 # Define global variables
 globalVariable = globalVars()
@@ -502,7 +514,7 @@ globalVariable.ystop = ystop
 globalVariable.scaleRange = scaleRange
 globalVariable.car_images = car_images
 globalVariable.noncar_images = noncar_images
-
+globalVariable.threshold = threshold
 
 
 
