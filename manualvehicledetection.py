@@ -496,7 +496,6 @@ ystop = 656
 scaleRange = (1,3,5) #start, stop, and num points
 threshold = 2
 
-
 # Define global variables
 globalVariable = globalVars()
 globalVariable.color_space = color_space
