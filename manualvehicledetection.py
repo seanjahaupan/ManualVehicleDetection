@@ -14,6 +14,7 @@ import imageio
 imageio.plugins.ffmpeg.download()
 from moviepy.editor import VideoFileClip
 from IPython.display import HTML
+from collections import deque
 
 class globalVars():
     #This class stores all of the global variables
@@ -31,6 +32,7 @@ class globalVars():
         self.hist_feat = None
         self.hog_feat = None
         self.threshold = None
+        self.oldWindows = []
         
         
         #Image Arrays
@@ -298,15 +300,16 @@ def find_cars(img, globalVariable):
     img_tosearch = img[ystart:ystop,:,:]
     ctrans_tosearch = convert_color(img_tosearch, conv='RGB2YCrCb')
 
-    #Create an empty list to receive positive detection windows
+    #Create an list to receive positive detection windows, use previous windows as well
     on_windows = []
+    on_windows.extend(globalVariable.oldWindows)
 
     #Create empty list to show all positions of windows
     if displayImages:
         all_windows = []
 
     #Sweep through the scale range
-    for scale in np.linspace(scaleRange[0],scaleRange[1], num = scaleRange[2], endpoint = True):
+    for scale in scaleRange:
         t=time.time()
         if scale != 1:
             imshape = ctrans_tosearch.shape
@@ -393,6 +396,9 @@ def find_cars(img, globalVariable):
         acceptedBoxes = draw_boxes(img, on_windows)
         save_images(acceptedBoxes, 'Accepted Boxes')
     
+    #return on_windows and extend them to the old windows variable
+    globalVariable.oldWindows.extend(on_windows)
+
     return on_windows
     #return draw_img
 
@@ -481,20 +487,22 @@ print('non-car image size ', len(noncar_images))
 
 #Setting up variables
 color_space = 'YCrCb' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
-orient = 6  # HOG orientations
+orient = 8  # HOG orientations
 pix_per_cell = 8 # HOG pixels per cell
 cell_per_block = 2 # HOG cells per block
 hog_channel = 'ALL' # Can be 0, 1, 2, or "ALL"
 spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 32    # Number of histogram bins
 hist_range = (0,256)
-spatial_feat = False # Spatial features on or off
-hist_feat = False # Histogram features on or off
+spatial_feat = True # Spatial features on or off
+hist_feat = True # Histogram features on or off
 hog_feat = True # HOG features on or off
 ystart = 400
 ystop = 656
-scaleRange = (1,3,5) #start, stop, and num points
-threshold = 2
+scaleRange = [1.75, 2, 2.25, 2.5] #list of scales to go through
+threshold = 3
+history = 10
+oldWindows = deque(maxlen = history)
 
 # Define global variables
 globalVariable = globalVars()
@@ -515,14 +523,17 @@ globalVariable.scaleRange = scaleRange
 globalVariable.car_images = car_images
 globalVariable.noncar_images = noncar_images
 globalVariable.threshold = threshold
+globalVariable.oldWindows = oldWindows
 
 
 
 #Visualize what a hog feature looks like
 
-carImg = mpimg.imread(car_images[np.random.randint(0, len(car_images)-1)])
+carImg = cv2.imread(car_images[np.random.randint(0, len(car_images)-1)])
+carImg = cv2.cvtColor(carImg, cv2.COLOR_BGR2RGB)
 carFeature, carImgDst = get_hog_features(carImg[:,:,2], globalVariable.orient, globalVariable.pix_per_cell, globalVariable.cell_per_block, vis = True, feature_vec = True)
-noncarImg = mpimg.imread(noncar_images[np.random.randint(0, len(car_images) -1)])
+noncarImg = cv2.imread(noncar_images[np.random.randint(0, len(car_images) -1)])
+noncarImg = cv2.cvtColor(noncarImg, cv2.COLOR_BGR2RGB)
 noncarFeature, noncarImgDst = get_hog_features(noncarImg[:,:,2], globalVariable.orient, globalVariable.pix_per_cell, globalVariable.cell_per_block, vis = True, feature_vec = True)
 #save plots
 figure, ((plt1, plt2), (plt3, plt4)) = plt.subplots(2,2, figsize = (7,7))
@@ -547,7 +558,7 @@ train_model(globalVariable)
 
 
 ##############################################################
-#Test image
+# Test image
 ##############################################################
 
 image = mpimg.imread('test1.jpg')
@@ -558,9 +569,17 @@ save_images(final_image, 'final image')
 globalVariable.displayImages = False
 
 
+#################################################################
+# Video
+#################################################################
+#reset old windows variable
+oldWindows = deque(maxlen = history)
+globalVariable.oldWindows = oldWindows
+
 #Video
 output_file = 'video_output.mp4'
-#input_file = VideoFileClip('project_video.mp4').subclip(6,10)
+
+#input_file = VideoFileClip('project_video.mp4').subclip(9,10)
 input_file = VideoFileClip('project_video.mp4')
 processedClip = input_file.fl_image(vehicleDetectionPipeline)
 processedClip.write_videofile(output_file, audio = False)
